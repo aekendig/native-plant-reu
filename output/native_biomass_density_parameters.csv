@@ -1,0 +1,13 @@
+Species,Treatment,Parameter,Estimate,Est.Error,Q2.5,Q97.5
+Elymus virginicus,control (water),alpha,2.64,1.05,1.19,5.28
+Elymus virginicus,control (water),b0,1.88,0.14,1.6,2.15
+Elymus virginicus,pathogen inoculation,alpha,1.94,0.69,1.01,3.66
+Elymus virginicus,pathogen inoculation,b0,1.29,0.08,1.13,1.45
+Eragrostis spectabilis,control (water),alpha,2.06,1.07,0.66,4.72
+Eragrostis spectabilis,control (water),b0,1,0.12,0.75,1.24
+Eragrostis spectabilis,pathogen inoculation,alpha,1.48,0.86,0.43,3.67
+Eragrostis spectabilis,pathogen inoculation,b0,0.83,0.11,0.61,1.06
+Panicum clandestinum,control (water),alpha,1.68,0.81,0.64,3.73
+Panicum clandestinum,control (water),b0,2.06,0.21,1.63,2.48
+Panicum clandestinum,pathogen inoculation,alpha,1.87,0.64,0.97,3.43
+Panicum clandestinum,pathogen inoculation,b0,3.27,0.2,2.85,3.66

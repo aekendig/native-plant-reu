@@ -1,0 +1,19 @@
+Coefficient,Estimate,Est.Error,Q2.5,Q97.5
+intercept,3.07,0.61,1.84,4.26
+density,0.11,0.05,0.01,0.20
+pathogen inoculation,0.15,0.66,-1.15,1.45
+Eragrostis,-1.06,0.71,-2.46,0.35
+Panicum,-0.74,0.71,-2.13,0.64
+density2,-6.02E-04,5.00E-04,-1.58E-03,3.80E-04
+density:pathogen inoculation,-0.03,0.06,-0.16,0.09
+density:Eragrostis,0.02,0.07,-0.11,0.15
+density:Panicum,0.04,0.07,-0.09,0.17
+pathogen inoculation:Eragrostis,-0.15,0.81,-1.73,1.42
+pathogen inoculation:Clandestinum,-0.05,0.81,-1.65,1.53
+pathogen inoculation:density2,3.05E-04,6.75E-04,-1.03E-03,1.63E-03
+Eragrostis:density2,-3.96E-04,7.00E-04,-1.76E-03,9.83E-04
+Panicum:density2,-3.12E-04,6.89E-04,-1.66E-03,1.04E-03
+density:pathogen inoculation:Eragrostis,0.08,0.09,-0.10,0.26
+density:pathogen inoculation:Panicum,1.93E-03,0.09,-0.17,0.18
+pathogen inoculation:Eragrostis:density2,-8.43E-04,9.63E-04,-2.75E-03,1.04E-03
+pathogen inoculation:Panicum:density2,-2.32E-04,9.48E-04,-2.09E-03,1.62E-03

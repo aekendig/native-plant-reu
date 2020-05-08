@@ -427,7 +427,7 @@ nat_coef <- nat_coef_c %>%
 # save
 write_csv(nat_coef, "./output/native_biomass_density_parameters.csv")
 
-#### Microstegium biomass figure ####
+#### mv biomass figure ####
 
 # separate data
 mvdatc <- filter(dat3, species == "C") %>%
@@ -513,7 +513,7 @@ grid.arrange(arrangeGrob(dens_plot_mv2, bottom = leg_nat, padding = unit(1, "lin
 dev.off()
 
 
-#### Microstegium biomass table ####
+#### mv biomass table ####
 
 # extract coefficients
 mv_coef <- fixef(mv_mod) %>%

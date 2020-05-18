@@ -1,0 +1,13 @@
+Comparison,Species/Treatment,Disease,Estimate,Q2.5,Q97.5,.width,.point,.interval
+Pathogen inoculation - Control (water),Elymus virginicus,Direct,-0.60,-0.99,-0.21,0.95,mean,hdi
+Pathogen inoculation - Control (water),Elymus virginicus,Indirect,-0.99,-5.92,3.86,0.95,mean,hdi
+Pathogen inoculation - Control (water),Eragrostis spectabilis,Direct,-0.17,-0.55,0.21,0.95,mean,hdi
+Pathogen inoculation - Control (water),Eragrostis spectabilis,Indirect,-0.76,-6.08,4.50,0.95,mean,hdi
+Pathogen inoculation - Control (water),Panicum clandestinum,Direct,1.19,0.82,1.59,0.95,mean,hdi
+Pathogen inoculation - Control (water),Panicum clandestinum,Indirect,0.03,-2.13,1.95,0.95,mean,hdi
+Eragrostis - Elymus,Control (water),Direct,-0.88,-1.26,-0.49,0.95,mean,hdi
+Eragrostis - Elymus,Control (water),Indirect,-0.57,-5.56,5.15,0.95,mean,hdi
+Panicum - Elymus,Control (water),Direct,0.21,-0.16,0.60,0.95,mean,hdi
+Panicum - Elymus,Control (water),Indirect,-1.53,-5.57,2.19,0.95,mean,hdi
+Panicusm - Eragrostis,Control (water),Direct,1.09,0.70,1.47,0.95,mean,hdi
+Panicusm - Eragrostis,Control (water),Indirect,-0.95,-5.52,2.68,0.95,mean,hdi

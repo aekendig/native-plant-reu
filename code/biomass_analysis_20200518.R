@@ -89,18 +89,18 @@ plot(x, y, type = "l")
 dat2 <- filter(dat1, !is.na(nat_biomass))
 
 # model
-nat_mod_1 <- brm(data = dat2, family = gaussian,
-                 bf(nat_biomass ~ b0/(1 + alpha * density), 
-                    b0 ~ 0 + fungusF * species, 
-                    alpha ~ 0 + fungusF * species, 
-                    nl = T),
-                 prior <- c(prior(gamma(2, 1), nlpar = "b0", lb = 0),
-                            prior(exponential(0.5), nlpar = "alpha", lb = 0),
-                            prior(cauchy(0, 1), class = sigma)),
-                 iter = 6000, warmup = 1000, chains = 1, cores = 1)
-summary(nat_mod_1)
-plot(nat_mod_1)
-prior_summary(nat_mod_1)
+# nat_mod_1 <- brm(data = dat2, family = gaussian,
+#                  bf(nat_biomass ~ b0/(1 + alpha * density), 
+#                     b0 ~ 0 + fungusF * species, 
+#                     alpha ~ 0 + fungusF * species, 
+#                     nl = T),
+#                  prior <- c(prior(gamma(2, 1), nlpar = "b0", lb = 0),
+#                             prior(exponential(0.5), nlpar = "alpha", lb = 0),
+#                             prior(cauchy(0, 1), class = sigma)),
+#                  iter = 6000, warmup = 1000, chains = 1, cores = 1)
+# summary(nat_mod_1)
+# plot(nat_mod_1)
+# prior_summary(nat_mod_1)
 # this isn't quite right - the effects of species identity are constrained to be positive
 
 # combine species and fungus treatments into one variable
@@ -118,6 +118,7 @@ nat_mod_2 <- brm(data = dat3, family = gaussian,
                             prior(exponential(0.5), nlpar = "alpha", lb = 0),
                             prior(cauchy(0, 1), class = sigma)),
                  iter = 6000, warmup = 1000, chains = 1, cores = 1)
+prior_summary(nat_mod_2)
 summary(nat_mod_2)
 plot(nat_mod_2)
 
@@ -154,13 +155,23 @@ ggplot(dat3, aes(x = density, y = nat_biomass)) +
 dat4 <- filter(dat1, !is.na(mv_biomass)) %>%
   mutate(species = fct_relevel(species, "V", "S", "C"))
 
+# intercept prior
+filter(dat4, species == "V" & fungus == 0 & density == 2) %>%
+  summarise(mean = mean(mv_biomass),
+            sd = sd(mv_biomass))
+
 # model
 mv_mod <- brm(data = dat4, family = gaussian,
               mv_biomass ~ density*fungus*species + I(density^2)*fungus*species,
-              prior <- c(prior(normal(0, 1), class = "b")),
-              iter = 6000, warmup = 1000, chains = 3, cores = 2)
+              prior <- c(prior(normal(0, 10), class = "b"),
+                         prior(normal(4, 10), class = "Intercept"),
+                         prior(cauchy(0, 1), class = sigma)),
+              iter = 6000, warmup = 1000, chains = 3, cores = 2, 
+              control = list(max_treedepth = 15))
+prior_summary(mv_mod)
 summary(mv_mod)                 
 plot(mv_mod)
+pp_check(mv_mod, nsamples = 100)
 
 # simulate data
 mv_sim_dat <- tibble(density = seq(0, 100, length.out = 300)) %>%
@@ -254,7 +265,7 @@ dens_plot_c <- ggplot(datc, aes(x = density, y = nat_biomass, color = Treatment,
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   annotation_custom(ggplotGrob(par_plot_c), xmin = 20, xmax = 95, ymin = 1, ymax = 4.1) +
-  ggtitle("Panicum clandestinum") +
+  ggtitle("Panicum") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def
@@ -265,7 +276,7 @@ dens_plot_s <- ggplot(dats, aes(x = density, y = nat_biomass, color = Treatment,
   stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   annotation_custom(ggplotGrob(par_plot_s), xmin = 20, xmax = 95, ymin = 0.32, ymax = 1.33) +
-  ggtitle("Eragrostis spectabilis") +
+  ggtitle("Eragrostis") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   scale_y_continuous(breaks = c(0, 1)) +
@@ -277,7 +288,7 @@ dens_plot_v <- ggplot(datv, aes(x = density, y = nat_biomass, color = Treatment,
   stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   annotation_custom(ggplotGrob(par_plot_v), xmin = 20, xmax = 95, ymin = 0.56, ymax = 2.3) +
-  ggtitle("Elymus virginicus") +
+  ggtitle("Elymus") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   scale_y_continuous(breaks = c(0, 1, 2)) +
@@ -302,7 +313,7 @@ dens_plot_nat2 <- grid.arrange(arrangeGrob(dens_plot_nat, bottom = x_plot_nat, l
 leg_nat <- get_legend(dens_plot_v)
 
 # save plot
-tiff("./output/native_biomass_density_figure.tiff", width = 7.5, height = 3, units = "in", res = 300)
+tiff("./output/Fig1.tiff", width = 7.5, height = 3, units = "in", res = 300)
 grid.arrange(arrangeGrob(dens_plot_nat2, bottom = leg_nat, padding = unit(1, "line")))
 dev.off()
 
@@ -313,7 +324,7 @@ dev.off()
 nat_post <- posterior_samples(nat_mod_3)
 
 # calculate differences
-nat_diff <- post_nat %>%
+nat_diff <- nat_post %>%
   transmute(dfv = b_b0_spfungusVinoculation - b_b0_spfungusVcontrol,
             dfs = b_b0_spfungusSinoculation - b_b0_spfungusScontrol,
             dfc = b_b0_spfungusCinoculation - b_b0_spfungusCcontrol,
@@ -349,14 +360,15 @@ nat_table <- nat_diff %>%
 # save
 write_csv(nat_table, "./output/native_biomass_density_table.csv")
 
+
 #### mv biomass figure ####
 
 # separate data
-mvdatc <- filter(dat3, species == "C") %>%
+mvdatc <- filter(dat4, species == "C") %>%
   mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
-mvdats <- filter(dat3, species == "S") %>%
+mvdats <- filter(dat4, species == "S") %>%
   mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
-mvdatv <- filter(dat3, species == "V") %>%
+mvdatv <- filter(dat4, species == "V") %>%
   mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
 
 mv_sim_datc <- filter(mv_sim_dat, species == "C")
@@ -384,10 +396,11 @@ mv_plot_c <- ggplot(mvdatc_sum, aes(x = density, y = mv_biomass,
   geom_line(data = mv_sim_datc, aes(linetype = Treatment)) +
   geom_errorbar(width = 0.1, alpha = 0.5) +
   geom_point(size = 2) +
-  ggtitle("Panicum clandestinum") +
+  ggtitle(expression(paste("Native: ", italic(Panicum), sep = ""))) +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def +
+  theme(plot.title = element_text(size = 12, hjust = 0.5)) +
   scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
 
 mv_plot_s <- ggplot(mvdats, aes(x = density, y = mv_biomass, color = Treatment, fill = Treatment)) + 
@@ -395,10 +408,11 @@ mv_plot_s <- ggplot(mvdats, aes(x = density, y = mv_biomass, color = Treatment, 
   geom_line(data = mv_sim_dats, aes(linetype = Treatment)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
-  ggtitle("Eragrostis spectabilis") +
+  ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def +
+  theme(plot.title = element_text(size = 12, hjust = 0.5)) +
   scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
 
 mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass, 
@@ -408,10 +422,11 @@ mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass,
   geom_line(data = mv_sim_datv, aes(linetype = Treatment)) +
   geom_errorbar(width = 0.1, alpha = 0.5) +
   geom_point(size = 2) +
-  ggtitle("Elymus virginicus") +
+  ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def +
+  theme(plot.title = element_text(size = 12, hjust = 0.5)) +
   scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
 
 # combine plots
@@ -429,9 +444,12 @@ x_plot_mv <- x_plot_nat
 # combine
 dens_plot_mv2 <- grid.arrange(arrangeGrob(dens_plot_mv, bottom = x_plot_mv, left = y_plot_mv))
 
+# legend
+leg_mv <- get_legend(mv_plot_v)
+
 # save plot
-tiff("./output/mv_biomass_density_figure.tiff", width = 7.5, height = 3, units = "in", res = 300)
-grid.arrange(arrangeGrob(dens_plot_mv2, bottom = leg_nat, padding = unit(1, "line")))
+tiff("./output/Fig3.tiff", width = 7.5, height = 3, units = "in", res = 300)
+grid.arrange(arrangeGrob(dens_plot_mv2, bottom = leg_mv, padding = unit(1, "line")))
 dev.off()
 
 

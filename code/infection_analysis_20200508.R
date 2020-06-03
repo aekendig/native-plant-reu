@@ -109,7 +109,7 @@ var(leafdat$leaves)
 # Beverton-Holt with a single species-fungus treatment combination with Gaussian response - underestimated values because it's going towards 0 at high density
 # Gaussian linear model - better fit, misses non-linearity
 
-# model
+# model (didn't end up using this)
 mv_mod_leaves <- brm(data = leafdat, family = gaussian,
                     leaves ~ density*fungus*species + I(density^2)*fungus*species,
                     prior <- c(prior(normal(0, 1), class = "b")),
@@ -155,6 +155,7 @@ mv_mod_infec <- brm(data = mvdat, family = binomial,
 prior_summary(mv_mod_infec)              
 summary(mv_mod_infec)                 
 plot(mv_mod_infec)
+pp_check(mv_mod_infec, nsamples = 100)
 
 # simulate data
 mv_sim_dat <- mvdat %>%
@@ -227,21 +228,21 @@ nat_plot_c <- ggplot(natdatc, aes(x = densityf, y = native_leaves, fill = Lesion
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Panicum clandestiunum") +
+  ggtitle("Panicum") +
   theme_def
 
 nat_plot_v <- ggplot(natdatv, aes(x = densityf, y = native_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Elymus virginicus") +
+  ggtitle("Elymus") +
   theme_def
 
 nat_plot_s <- ggplot(natdats, aes(x = densityf, y = native_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Eragrostis spectabilis") +
+  ggtitle("Eragrostis") +
   theme_def
 
 # combine plots
@@ -257,7 +258,7 @@ y_plot_nat <- textGrob("Leaves per plant with lesions", gp = gpar(fontsize = 12)
 x_plot_nat <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 12))
 
 # save plot
-tiff("./output/native_infection_density_figure.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
+tiff("./output/Fig2.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(nat_plot_comb, bottom = x_plot_nat, left = y_plot_nat))
 dev.off()
 
@@ -288,9 +289,10 @@ mv_plot_c <- ggplot(mvdatc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Panicum clandestiunum") +
+  ggtitle(expression(paste("Native: ", italic(Panicum), sep = ""))) +
   theme_def +
-  theme(legend.position = "none") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 12, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
 mv_plot_v <- ggplot(mvdatv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
@@ -298,9 +300,10 @@ mv_plot_v <- ggplot(mvdatv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Elymus virginicus") +
+  ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
   theme_def +
-  theme(legend.position = "none") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 12, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
 mv_plot_s <- ggplot(mvdats, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
@@ -308,9 +311,10 @@ mv_plot_s <- ggplot(mvdats, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Eragrostis spectabilis") +
+  ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
   theme_def +
-  theme(legend.position = c(0.2, 0.5)) +
+  theme(legend.position = c(0.2, 0.5),
+        plot.title = element_text(size = 12, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
 # combine plots
@@ -326,7 +330,7 @@ y_plot_mv <- textGrob(expression(paste(italic(Microstegium), " leaves per pot", 
 x_plot_mv <- x_plot_nat
 
 # save plot
-tiff("./output/mv_infection_density_figure.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
+tiff("./output/Fig4.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(mv_plot_comb, bottom = x_plot_mv, left = y_plot_mv))
 dev.off()
 
@@ -357,28 +361,31 @@ leaf_plot_c <- ggplot(ldatc, aes(x = density, y = leaves, color = Treatment)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   scale_color_manual(values = col_pal2) +
-  ggtitle("Panicum clandestiunum") +
+  ggtitle(expression(paste("Native: ", italic(Panicum), sep = ""))) +
   theme_def +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 leaf_plot_v <- ggplot(ldatv, aes(x = density, y = leaves, color = Treatment)) +
   stat_summary(geom = "line", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   scale_color_manual(values = col_pal2) +
-  ggtitle("Elymus virginicus") +
+  ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
   theme_def +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 leaf_plot_s <- ggplot(ldats, aes(x = density, y = leaves, color = Treatment)) +
   stat_summary(geom = "line", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   scale_color_manual(values = col_pal2) +
-  ggtitle("Eragrostis spectabilis") +
+  ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
   theme_def +
   theme(legend.position = "bottom",
-        legend.direction = "horizontal")
+        legend.direction = "horizontal",
+        plot.title = element_text(size = 12, hjust = 0.5))
 
 # combine plots
 leaf_plot_comb <- plot_grid(leaf_plot_v,
@@ -399,6 +406,6 @@ leaf_plot_comb2 <- grid.arrange(arrangeGrob(leaf_plot_comb, bottom = x_plot_leaf
 leg_leaf <- get_legend(leaf_plot_s)
 
 # save plot
-tiff("./output/mv_leaves_density_figure.tiff", width = 7.5, height = 3, units = "in", res = 300)
+tiff("./output/S1Fig.tiff", width = 7.5, height = 3, units = "in", res = 300)
 grid.arrange(arrangeGrob(leaf_plot_comb2, bottom = leg_leaf, padding = unit(1, "line")))
 dev.off()

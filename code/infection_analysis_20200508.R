@@ -229,21 +229,24 @@ nat_plot_c <- ggplot(natdatc, aes(x = densityf, y = native_leaves, fill = Lesion
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
   ggtitle("Panicum") +
-  theme_def
+  theme_def +
+  scale_y_continuous(breaks = c(0, 3, 6, 9), limits = c(0, 9))
 
 nat_plot_v <- ggplot(natdatv, aes(x = densityf, y = native_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
   ggtitle("Elymus") +
-  theme_def
+  theme_def +
+  scale_y_continuous(breaks = c(0, 3, 6, 9), limits = c(0, 9))
 
 nat_plot_s <- ggplot(natdats, aes(x = densityf, y = native_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   scale_fill_manual(values = col_pal) +
   ggtitle("Eragrostis") +
-  theme_def
+  theme_def +
+  scale_y_continuous(breaks = c(0, 3, 6, 9), limits = c(0, 9))
 
 # combine plots
 nat_plot_comb <- plot_grid(nat_plot_v + theme(legend.position = "none"),
@@ -330,7 +333,7 @@ y_plot_mv <- textGrob(expression(paste(italic(Microstegium), " leaves per pot", 
 x_plot_mv <- x_plot_nat
 
 # save plot
-tiff("./output/Fig4.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
+tiff("./output/Fig1.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(mv_plot_comb, bottom = x_plot_mv, left = y_plot_mv))
 dev.off()
 
@@ -396,8 +399,8 @@ leaf_plot_comb <- plot_grid(leaf_plot_v,
                           label_size = 12)
 
 # axes
-y_plot_leaf <- textGrob(expression(paste(italic(Microstegium), " leaves per tiller", sep = "")), gp = gpar(fontsize = 12), rot = 90)
-x_plot_leaf <- x_plot_nat
+y_plot_leaf <- textGrob(expression(paste(italic(Microstegium), " leaves per plant", sep = "")), gp = gpar(fontsize = 12), rot = 90)
+x_plot_leaf <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 12))
 
 # combine
 leaf_plot_comb2 <- grid.arrange(arrangeGrob(leaf_plot_comb, bottom = x_plot_leaf, left = y_plot_leaf))

@@ -313,7 +313,7 @@ dens_plot_nat2 <- grid.arrange(arrangeGrob(dens_plot_nat, bottom = x_plot_nat, l
 leg_nat <- get_legend(dens_plot_v)
 
 # save plot
-tiff("./output/Fig1.tiff", width = 7.5, height = 3, units = "in", res = 300)
+tiff("./output/Fig4.tiff", width = 7.5, height = 3, units = "in", res = 300)
 grid.arrange(arrangeGrob(dens_plot_nat2, bottom = leg_nat, padding = unit(1, "line")))
 dev.off()
 

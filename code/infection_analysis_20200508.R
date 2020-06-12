@@ -40,7 +40,8 @@ dat1 <- dat %>%
          mv_leaves_healthy = mv_leaves_est - mv_leaves_infec,
          native_leaves = replace_na(native_leaves, 1),
          native_prop_infec = native_leaves_infec / native_leaves,
-         native_leaves_healthy = native_leaves - native_leaves_infec)
+         native_leaves_healthy = native_leaves - native_leaves_infec) %>%
+  filter(notes != "Probably inoculated" | is.na(notes))
 
 
 #### visualize ####
@@ -65,10 +66,6 @@ ggplot(dat1, aes(x = density, y = mv_prop_infec, color = treatment)) +
   stat_summary(geom = "point", fun = "mean", size = 3) +
   stat_summary(geom = "line", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_se", width= .2)
-
-# accidentally inoculated pot
-filter(dat1, mv_prop_infec > 0 & treatment == "W")
-# W 100 C 1 - repeat biomass analysis without this one
 
 # nat infection
 ggplot(dat1, aes(x = density, y = native_prop_infec, color = treatment)) +
@@ -151,7 +148,7 @@ mv_mod_infec <- brm(data = mvdat, family = binomial,
                     mv_leaves_infec | trials(mv_leaves_est) ~ density*species,
                     prior <- c(prior(normal(0, 10), class = "b"),
                                prior(normal(0, 10), class = "Intercept")),
-                    iter = 6000, warmup = 1000, chains = 3, cores = 2)
+                    iter = 6000, warmup = 1000, chains = 3, cores = 1)
 prior_summary(mv_mod_infec)              
 summary(mv_mod_infec)                 
 plot(mv_mod_infec)
@@ -257,7 +254,7 @@ nat_plot_comb <- plot_grid(nat_plot_v + theme(legend.position = "none"),
                            label_size = 12)
 
 # axes
-y_plot_nat <- textGrob("Leaves per plant with lesions", gp = gpar(fontsize = 12), rot = 90)
+y_plot_nat <- textGrob("Leaves per plant", gp = gpar(fontsize = 12), rot = 90)
 x_plot_nat <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 12))
 
 # save plot

@@ -36,11 +36,13 @@ min(dat$nat_biomass, na.rm = T)
 min(dat$mv_biomass, na.rm = T)
 
 # add columns
+# remove pot that was accidentally inoculated
 dat1 <- dat %>%
   mutate(fungus = recode(treatment, "F" = 1, "W" = 0),
          fungusF = recode(treatment, "F" = "inoculation", "W" = "control"),
          log_nat_biomass = log(nat_biomass),
-         log_mv_biomass = log(mv_biomass))
+         log_mv_biomass = log(mv_biomass)) %>%
+  filter(!(treatment == "W" & density == 100 & species == "C" & replicate == 1))
 
 
 #### visualize ####
@@ -123,7 +125,7 @@ summary(nat_mod_2)
 plot(nat_mod_2)
 
 # increase the chains and cores
-nat_mod_3 <- update(nat_mod_2, chains = 3, cores = 2)
+nat_mod_3 <- update(nat_mod_2, chains = 3, cores = 1)
 summary(nat_mod_3)
 plot(nat_mod_3)
 pp_check(nat_mod_3, nsamples = 100)
@@ -166,7 +168,7 @@ mv_mod <- brm(data = dat4, family = gaussian,
               prior <- c(prior(normal(0, 10), class = "b"),
                          prior(normal(4, 10), class = "Intercept"),
                          prior(cauchy(0, 1), class = sigma)),
-              iter = 6000, warmup = 1000, chains = 3, cores = 2, 
+              iter = 6000, warmup = 1000, chains = 3, cores = 1, 
               control = list(max_treedepth = 15))
 prior_summary(mv_mod)
 summary(mv_mod)                 
@@ -401,7 +403,7 @@ mv_plot_c <- ggplot(mvdatc_sum, aes(x = density, y = mv_biomass,
   scale_fill_manual(values = col_pal) +
   theme_def +
   theme(plot.title = element_text(size = 12, hjust = 0.5)) +
-  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
+  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 14))
 
 mv_plot_s <- ggplot(mvdats, aes(x = density, y = mv_biomass, color = Treatment, fill = Treatment)) + 
   geom_ribbon(data = mv_sim_dats, aes(ymin = mv_biomass_lower, ymax = mv_biomass_upper), alpha = 0.3, color = NA) +
@@ -413,7 +415,7 @@ mv_plot_s <- ggplot(mvdats, aes(x = density, y = mv_biomass, color = Treatment, 
   scale_fill_manual(values = col_pal) +
   theme_def +
   theme(plot.title = element_text(size = 12, hjust = 0.5)) +
-  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
+  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 14))
 
 mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass, 
                                     ymin = mv_biomass_lower, ymax = mv_biomass_upper,
@@ -427,7 +429,7 @@ mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass,
   scale_fill_manual(values = col_pal) +
   theme_def +
   theme(plot.title = element_text(size = 12, hjust = 0.5)) +
-  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 12))
+  scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 14))
 
 # combine plots
 dens_plot_mv <- plot_grid(mv_plot_v + theme(legend.position = "none"),

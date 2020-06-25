@@ -1,13 +1,13 @@
 Comparison,Species,Disease,Estimate,Q2.5,Q97.5,.width,.point,.interval
-Eragrostis - Elymus,Elymus virginicus,Direct,-0.8776847941210003,-1.2514584443428522,-0.49440588798166085,0.95,mean,hdi
-Eragrostis - Elymus,Elymus virginicus,Indirect,-0.5956210969026633,-5.873087380598047,4.970848993509499,0.95,mean,hdi
-Panicum - Elymus,Elymus virginicus,Direct,0.21196852081716908,-0.16367843839142648,0.6065495751967382,0.95,mean,hdi
-Panicum - Elymus,Elymus virginicus,Indirect,-1.543116397169325,-6.193171932939609,1.669385812225,0.95,mean,hdi
-Panicusm - Eragrostis,Eragrostis spectabilis,Direct,1.0896533149381693,0.6971255226456039,1.4719895708584425,0.95,mean,hdi
-Panicusm - Eragrostis,Eragrostis spectabilis,Indirect,-0.9474953002666616,-5.351613979173649,2.781169946408003,0.95,mean,hdi
-Pathogen inoculation - Control (water),Elymus virginicus,Direct,-0.6022869265816527,-0.9763582450994639,-0.2218961984911203,0.95,mean,hdi
-Pathogen inoculation - Control (water),Elymus virginicus,Indirect,-1.02204826803561,-6.119955997401812,3.644740241340012,0.95,mean,hdi
-Pathogen inoculation - Control (water),Eragrostis spectabilis,Direct,-0.16782213556858738,-0.5661726605249933,0.1921062604106426,0.95,mean,hdi
-Pathogen inoculation - Control (water),Eragrostis spectabilis,Indirect,-0.7404996762398253,-6.223716731629907,4.365075844212194,0.95,mean,hdi
-Pathogen inoculation - Control (water),Panicum clandestinum,Direct,1.1923777994427105,0.7965384493147258,1.580183272562859,0.95,mean,hdi
-Pathogen inoculation - Control (water),Panicum clandestinum,Indirect,0.033794573538498865,-2.2113989371267513,1.9038094150340068,0.95,mean,hdi
+Elymus - Dicanthelium,Dicanthelium clandestinum,Direct,-0.21,-0.61,0.17,0.95,mean,hdi
+Elymus - Dicanthelium,Dicanthelium clandestinum,Indirect,1.52,-1.94,5.78,0.95,mean,hdi
+Eragrostis - Dicanthelium,Dicanthelium clandestinum,Direct,-1.09,-1.47,-0.72,0.95,mean,hdi
+Eragrostis - Dicanthelium,Dicanthelium clandestinum,Indirect,0.96,-2.78,5.48,0.95,mean,hdi
+Eragrostis - Elymus,Elymus virginicus,Direct,-0.87,-1.27,-0.5,0.95,mean,hdi
+Eragrostis - Elymus,Elymus virginicus,Indirect,-0.55,-5.78,4.74,0.95,mean,hdi
+Pathogen inoculation - Control (water),Elymus virginicus,Direct,-0.6,-0.99,-0.22,0.95,mean,hdi
+Pathogen inoculation - Control (water),Elymus virginicus,Indirect,-1,-5.9,3.83,0.95,mean,hdi
+Pathogen inoculation - Control (water),Eragrostis spectabilis,Direct,-0.17,-0.55,0.2,0.95,mean,hdi
+Pathogen inoculation - Control (water),Eragrostis spectabilis,Indirect,-0.74,-6.16,4.29,0.95,mean,hdi
+Pathogen inoculation - Control (water),Dicanthelium clandestinum,Direct,1.19,0.82,1.59,0.95,mean,hdi
+Pathogen inoculation - Control (water),Dicanthelium clandestinum,Indirect,0.03,-2.09,2.08,0.95,mean,hdi

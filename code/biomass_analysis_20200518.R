@@ -155,10 +155,10 @@ ggplot(dat3, aes(x = density, y = nat_biomass)) +
 # remove missing data
 # reorder species
 dat4 <- filter(dat1, !is.na(mv_biomass)) %>%
-  mutate(species = fct_relevel(species, "V", "S", "C"))
+  mutate(species = fct_relevel(species, "C", "V", "S"))
 
 # intercept prior
-filter(dat4, species == "V" & fungus == 0 & density == 2) %>%
+filter(dat4, species == "C" & fungus == 0 & density == 2) %>%
   summarise(mean = mean(mv_biomass),
             sd = sd(mv_biomass))
 
@@ -166,7 +166,7 @@ filter(dat4, species == "V" & fungus == 0 & density == 2) %>%
 mv_mod <- brm(data = dat4, family = gaussian,
               mv_biomass ~ density*fungus*species + I(density^2)*fungus*species,
               prior <- c(prior(normal(0, 10), class = "b"),
-                         prior(normal(4, 10), class = "Intercept"),
+                         prior(normal(2, 10), class = "Intercept"),
                          prior(cauchy(0, 1), class = sigma)),
               iter = 6000, warmup = 1000, chains = 3, cores = 1, 
               control = list(max_treedepth = 15))
@@ -244,9 +244,10 @@ col_pal = c("#018571", "#a6611a")
 
 # parameter plots
 par_plot_c <- ggplot(nat_coef_c, aes(x = Disease, y = Estimate, color = Treatment)) +
-  geom_errorbar(aes(ymin = Q2.5, ymax = Q97.5), position = position_dodge(0.2), width = 0.1) +
-  geom_point(size = 1.5, position = position_dodge(0.2))+
+  geom_errorbar(aes(ymin = Q2.5, ymax = Q97.5), position = position_dodge(0.5), width = 0) +
+  geom_point(size = 2, position = position_dodge(0.5))+
   scale_color_manual(values = col_pal) +
+  scale_y_continuous(limits = c(0, 8)) +
   theme_def +
   theme(legend.position = "none",
         axis.title.y = element_text(size = 10),
@@ -264,42 +265,43 @@ par_plot_v <- par_plot_c %+%
 dens_plot_c <- ggplot(datc, aes(x = density, y = nat_biomass, color = Treatment, fill = Treatment)) + 
   geom_ribbon(data = nat_sim_datc, aes(ymin = nat_biomass_lower, ymax = nat_biomass_upper), alpha = 0.3, color = NA) +
   geom_line(data = nat_sim_datc, aes(linetype = Treatment)) +
-  stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
+  stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
-  annotation_custom(ggplotGrob(par_plot_c), xmin = 20, xmax = 95, ymin = 1, ymax = 4.1) +
-  ggtitle("Panicum") +
+  annotation_custom(ggplotGrob(par_plot_c), xmin = 20, xmax = 100, ymin = 1, ymax = 4.2) +
+  ggtitle("Dicanthelium") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
+  scale_y_continuous(limits = c(0, 4.2)) +
   theme_def
   
 dens_plot_s <- ggplot(dats, aes(x = density, y = nat_biomass, color = Treatment, fill = Treatment)) + 
   geom_ribbon(data = nat_sim_dats, aes(ymin = nat_biomass_lower, ymax = nat_biomass_upper), alpha = 0.3, color = NA) +
   geom_line(data = nat_sim_dats, aes(linetype = Treatment)) +
-  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, alpha = 0.5) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
-  annotation_custom(ggplotGrob(par_plot_s), xmin = 20, xmax = 95, ymin = 0.32, ymax = 1.33) +
+  annotation_custom(ggplotGrob(par_plot_s), xmin = 20, xmax = 100, ymin = 1, ymax = 4.2) +
   ggtitle("Eragrostis") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
-  scale_y_continuous(breaks = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 4.2)) +
   theme_def 
 
 dens_plot_v <- ggplot(datv, aes(x = density, y = nat_biomass, color = Treatment, fill = Treatment)) + 
   geom_ribbon(data = nat_sim_datv, aes(ymin = nat_biomass_lower, ymax = nat_biomass_upper), alpha = 0.3, color = NA) +
   geom_line(data = nat_sim_datv, aes(linetype = Treatment)) +
-  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, alpha = 0.5) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
-  annotation_custom(ggplotGrob(par_plot_v), xmin = 20, xmax = 95, ymin = 0.56, ymax = 2.3) +
+  annotation_custom(ggplotGrob(par_plot_v), xmin = 20, xmax = 100, ymin = 1, ymax = 4.2) +
   ggtitle("Elymus") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
-  scale_y_continuous(breaks = c(0, 1, 2)) +
+  scale_y_continuous(limits = c(0, 4.2)) +
   theme_def
   
 # combine plots
-dens_plot_nat <- plot_grid(dens_plot_v + theme(legend.position = "none"),
+dens_plot_nat <- plot_grid(dens_plot_c + theme(legend.position = "none"),
+                           dens_plot_v + theme(legend.position = "none"),
                            dens_plot_s + theme(legend.position = "none"),
-                           dens_plot_c + theme(legend.position = "none"),
                            nrow = 1,
                            labels = LETTERS[1:3],
                            label_size = 12)
@@ -333,22 +335,22 @@ nat_diff <- nat_post %>%
             ifv = b_alpha_spfungusVinoculation - b_alpha_spfungusVcontrol,
             ifs = b_alpha_spfungusSinoculation - b_alpha_spfungusScontrol,
             ifc = b_alpha_spfungusCinoculation - b_alpha_spfungusCcontrol,
-            dsv = b_b0_spfungusScontrol - b_b0_spfungusVcontrol,
-            dcv = b_b0_spfungusCcontrol - b_b0_spfungusVcontrol,
-            dps = b_b0_spfungusCcontrol - b_b0_spfungusScontrol,
-            isv = b_alpha_spfungusScontrol - b_alpha_spfungusVcontrol,
-            icv = b_alpha_spfungusCcontrol - b_alpha_spfungusVcontrol,
-            ips = b_alpha_spfungusCcontrol - b_alpha_spfungusScontrol) %>%
+            dvc = b_b0_spfungusVcontrol - b_b0_spfungusCcontrol,
+            dsc = b_b0_spfungusScontrol - b_b0_spfungusCcontrol,
+            dev = b_b0_spfungusScontrol - b_b0_spfungusVcontrol,
+            ivc = b_alpha_spfungusVcontrol - b_alpha_spfungusCcontrol,
+            isc = b_alpha_spfungusScontrol - b_alpha_spfungusCcontrol,
+            iev = b_alpha_spfungusScontrol - b_alpha_spfungusVcontrol) %>%
   gather() %>%
   mutate(Disease = case_when(substr(key, 1, 1) == "d" ~ "Direct",
                              TRUE ~ "Indirect"),
          Comparison = case_when(substr(key, 2, 2) == "f" ~ "Pathogen inoculation - Control (water)",
-                                substr(key, 2, 2) == "s" ~ "Eragrostis - Elymus",
-                                substr(key, 2, 2) == "c" ~ "Panicum - Elymus",
-                                substr(key, 2, 2) == "p" ~ "Panicusm - Eragrostis"),
+                                substr(key, 2, 2) == "s" ~ "Eragrostis - Dicanthelium",
+                                substr(key, 2, 2) == "v" ~ "Elymus - Dicanthelium",
+                                substr(key, 2, 2) == "e" ~ "Eragrostis - Elymus"),
          Species = case_when(substr(key, 3, 3) == "v"  ~ "Elymus virginicus",
                              substr(key, 3, 3) == "s"  ~ "Eragrostis spectabilis",
-                             substr(key, 3, 3) == "c"  ~ "Panicum clandestinum")) %>%
+                             substr(key, 3, 3) == "c"  ~ "Dicanthelium clandestinum")) %>%
   select(-key)
 head(nat_diff)
 
@@ -398,7 +400,7 @@ mv_plot_c <- ggplot(mvdatc_sum, aes(x = density, y = mv_biomass,
   geom_line(data = mv_sim_datc, aes(linetype = Treatment)) +
   geom_errorbar(width = 0.1, alpha = 0.5) +
   geom_point(size = 2) +
-  ggtitle(expression(paste("Native: ", italic(Panicum), sep = ""))) +
+  ggtitle(expression(paste("Native: ", italic(Dicanthelium), sep = ""))) +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def +
@@ -432,12 +434,12 @@ mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass,
   scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 14))
 
 # combine plots
-dens_plot_mv <- plot_grid(mv_plot_v + theme(legend.position = "none"),
-                           mv_plot_s + theme(legend.position = "none"),
-                           mv_plot_c + theme(legend.position = "none"),
-                           nrow = 1,
-                           labels = LETTERS[1:3],
-                           label_size = 12)
+dens_plot_mv <- plot_grid(mv_plot_c + theme(legend.position = "none"),
+                          mv_plot_v + theme(legend.position = "none"),
+                          mv_plot_s + theme(legend.position = "none"),
+                          nrow = 1,
+                          labels = LETTERS[1:3],
+                          label_size = 12)
 
 # axes
 y_plot_mv <- textGrob(expression(paste(italic(Microstegium), " biomass (g)", sep = "")), gp = gpar(fontsize = 12), rot = 90)

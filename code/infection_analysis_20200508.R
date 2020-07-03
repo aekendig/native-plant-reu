@@ -34,7 +34,7 @@ filter(dat, notes == "Probably inoculated") %>% data.frame()
 dat1 <- dat %>%
   mutate(fungus = recode(treatment, "F" = 1, "W" = 0),
          Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"),
-         Species = recode(species, "C" = "Dicanthelium\nclandestinum", "V" = "Elymus\nvirginicus", "S" = "Eragrostis\nspectabilis"),
+         Species = recode(species, "C" = "Dichanthelium\nclandestinum", "V" = "Elymus\nvirginicus", "S" = "Eragrostis\nspectabilis"),
          mv_leaves_avg = rowMeans(cbind(mv_leaves_stem_1, mv_leaves_stem_2, mv_leaves_stem_3), na.rm = T),
          mv_leaves_est = round(mv_leaves_avg) * density,
          mv_prop_infec = mv_leaves_infec / mv_leaves_est,
@@ -231,7 +231,7 @@ theme_def <- theme_bw() +
 nat_plot_c <- ggplot(natdatc, aes(x = densityf, y = native_plants, fill = Lesions)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = col_pal) +
-  ggtitle("Dicanthelium") +
+  ggtitle("Dichanthelium") +
   theme_def 
 
 nat_plot_v <- ggplot(natdatv, aes(x = densityf, y = native_plants, fill = Lesions)) +
@@ -260,7 +260,7 @@ y_plot_nat <- textGrob("Plants", gp = gpar(fontsize = 12), rot = 90)
 x_plot_nat <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 12))
 
 # save plot
-tiff("./output/Fig2.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
+tiff("./output/Fig3.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(nat_plot_comb, bottom = x_plot_nat, left = y_plot_nat))
 dev.off()
 
@@ -291,9 +291,9 @@ mv_plot_c <- ggplot(mvdatc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.5) +
   scale_fill_manual(values = col_pal) +
-  ggtitle(expression(paste("Native: ", italic(Dicanthelium), sep = ""))) +
+  ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
   theme_def +
-  theme(legend.position = "none",
+  theme(legend.position = c(0.2, 0.6),
         plot.title = element_text(size = 12, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
@@ -304,7 +304,7 @@ mv_plot_v <- ggplot(mvdatv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   scale_fill_manual(values = col_pal) +
   ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
   theme_def +
-  theme(legend.position = c(0.2, 0.6),
+  theme(legend.position = "none",
         plot.title = element_text(size = 12, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
@@ -332,7 +332,7 @@ y_plot_mv <- textGrob(expression(paste(italic(Microstegium), " leaves per pot", 
 x_plot_mv <- x_plot_nat
 
 # save plot
-tiff("./output/Fig1.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
+tiff("./output/Fig2.tiff", width = 7.5, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(mv_plot_comb, bottom = x_plot_mv, left = y_plot_mv))
 dev.off()
 
@@ -363,7 +363,7 @@ leaf_plot_c <- ggplot(ldatc, aes(x = density, y = leaves, color = Treatment)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   scale_color_manual(values = col_pal2) +
-  ggtitle(expression(paste("Native: ", italic(Dicanthelium), sep = ""))) +
+  ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
   theme_def +
   theme(legend.position = "none",
         plot.title = element_text(size = 12, hjust = 0.5))

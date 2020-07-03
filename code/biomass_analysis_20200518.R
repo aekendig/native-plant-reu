@@ -194,12 +194,6 @@ ggplot(dat4, aes(x = density, y = mv_biomass)) +
   facet_grid(as.factor(fungus) ~ species)
 
 
-#### save models ####
-
-save(nat_mod_3, file = "./output/nat_biomass_density_model.rda")
-save(mv_mod, file = "./output/mv_biomass_density_model.rda")
-
-
 #### native biomass figure ####
 
 # coefficients
@@ -268,7 +262,7 @@ dens_plot_c <- ggplot(datc, aes(x = density, y = nat_biomass, color = Treatment,
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0, alpha = 0.5) +
   stat_summary(geom = "point", fun = "mean", size = 2) +
   annotation_custom(ggplotGrob(par_plot_c), xmin = 20, xmax = 100, ymin = 1, ymax = 4.2) +
-  ggtitle("Dicanthelium") +
+  ggtitle("Dichanthelium") +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   scale_y_continuous(limits = c(0, 4.2)) +
@@ -317,7 +311,7 @@ dens_plot_nat2 <- grid.arrange(arrangeGrob(dens_plot_nat, bottom = x_plot_nat, l
 leg_nat <- get_legend(dens_plot_v)
 
 # save plot
-tiff("./output/Fig4.tiff", width = 7.5, height = 3, units = "in", res = 300)
+tiff("./output/Fig5.tiff", width = 7.5, height = 3, units = "in", res = 300)
 grid.arrange(arrangeGrob(dens_plot_nat2, bottom = leg_nat, padding = unit(1, "line")))
 dev.off()
 
@@ -345,12 +339,12 @@ nat_diff <- nat_post %>%
   mutate(Disease = case_when(substr(key, 1, 1) == "d" ~ "Direct",
                              TRUE ~ "Indirect"),
          Comparison = case_when(substr(key, 2, 2) == "f" ~ "Pathogen inoculation - Control (water)",
-                                substr(key, 2, 2) == "s" ~ "Eragrostis - Dicanthelium",
-                                substr(key, 2, 2) == "v" ~ "Elymus - Dicanthelium",
+                                substr(key, 2, 2) == "s" ~ "Eragrostis - Dichanthelium",
+                                substr(key, 2, 2) == "v" ~ "Elymus - Dichanthelium",
                                 substr(key, 2, 2) == "e" ~ "Eragrostis - Elymus"),
          Species = case_when(substr(key, 3, 3) == "v"  ~ "Elymus virginicus",
                              substr(key, 3, 3) == "s"  ~ "Eragrostis spectabilis",
-                             substr(key, 3, 3) == "c"  ~ "Dicanthelium clandestinum")) %>%
+                             substr(key, 3, 3) == "c"  ~ "Dichanthelium clandestinum")) %>%
   select(-key)
 head(nat_diff)
 
@@ -400,7 +394,7 @@ mv_plot_c <- ggplot(mvdatc_sum, aes(x = density, y = mv_biomass,
   geom_line(data = mv_sim_datc, aes(linetype = Treatment)) +
   geom_errorbar(width = 0.1, alpha = 0.5) +
   geom_point(size = 2) +
-  ggtitle(expression(paste("Native: ", italic(Dicanthelium), sep = ""))) +
+  ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
   scale_color_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
   theme_def +
@@ -452,7 +446,7 @@ dens_plot_mv2 <- grid.arrange(arrangeGrob(dens_plot_mv, bottom = x_plot_mv, left
 leg_mv <- get_legend(mv_plot_v)
 
 # save plot
-tiff("./output/Fig3.tiff", width = 7.5, height = 3, units = "in", res = 300)
+tiff("./output/Fig4.tiff", width = 7.5, height = 3, units = "in", res = 300)
 grid.arrange(arrangeGrob(dens_plot_mv2, bottom = leg_mv, padding = unit(1, "line")))
 dev.off()
 
@@ -465,3 +459,9 @@ mv_coef <- fixef(mv_mod) %>%
 
 # save
 write_csv(mv_coef, "./output/mv_biomass_density_coefficients.csv")
+
+
+#### save models ####
+
+save(nat_mod_3, file = "./output/nat_biomass_density_model.rda")
+save(mv_mod, file = "./output/mv_biomass_density_model.rda")

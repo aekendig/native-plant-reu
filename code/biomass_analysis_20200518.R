@@ -108,7 +108,7 @@ dat2 <- filter(dat1, !is.na(nat_biomass))
 # combine species and fungus treatments into one variable
 dat3 <- dat2 %>%
   mutate(spfungus = paste(species, fungusF, sep = ""),
-         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
+         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
 
 # model
 nat_mod_2 <- brm(data = dat3, family = gaussian,
@@ -140,7 +140,7 @@ nat_sim_dat <- tibble(density = seq(0, 100, length.out = 300)) %>%
   mutate(nat_biomass = fitted(nat_mod_3, newdata = .)[, "Estimate"],
          nat_biomass_lower = fitted(nat_mod_3, newdata = .)[, "Q2.5"],
          nat_biomass_upper = fitted(nat_mod_3, newdata = .)[, "Q97.5"],
-         Treatment = recode(fungusF, "inoculation" = "pathogen inoculation", "control" = "control (water)")) 
+         Treatment = recode(fungusF, "inoculation" = "pathogen inoculation", "control" = "mock inoculation (control)")) 
 
 # plot model
 ggplot(dat3, aes(x = density, y = nat_biomass)) +
@@ -184,7 +184,7 @@ mv_sim_dat <- tibble(density = seq(0, 100, length.out = 300)) %>%
   mutate(mv_biomass = fitted(mv_mod, newdata = .)[, "Estimate"],
          mv_biomass_lower = fitted(mv_mod, newdata = .)[, "Q2.5"],
          mv_biomass_upper = fitted(mv_mod, newdata = .)[, "Q97.5"],
-         Treatment = recode(fungus, "1" = "pathogen inoculation", "0" = "control (water)")) 
+         Treatment = recode(fungus, "1" = "pathogen inoculation", "0" = "mock inoculation (control)")) 
 
 # plot model
 ggplot(dat4, aes(x = density, y = mv_biomass)) +
@@ -200,7 +200,7 @@ ggplot(dat4, aes(x = density, y = mv_biomass)) +
 nat_coef <- fixef(nat_mod_3) %>%
   as_tibble() %>%
   mutate(Parameter = rep(c("b0", "alpha"), each = 6),
-         Treatment = rep(c("control (water)", "pathogen inoculation"), 6),
+         Treatment = rep(c("mock inoculation (control)", "pathogen inoculation"), 6),
          species = rep(rep(c("C", "S", "V"), each = 2), 2)) %>%
   mutate(Disease = recode(Parameter, "b0" = "Direct", "alpha" = "Indirect"))
 
@@ -234,7 +234,7 @@ theme_def <- theme_bw() +
         plot.title = element_text(size = 12, face = "italic", hjust = 0.5))
 
 # colors
-col_pal = c("#018571", "#a6611a")
+col_pal = c("#55A48B", "#C0A76D")
 
 # parameter plots
 par_plot_c <- ggplot(nat_coef_c, aes(x = Disease, y = Estimate, color = Treatment)) +
@@ -338,7 +338,7 @@ nat_diff <- nat_post %>%
   gather() %>%
   mutate(Disease = case_when(substr(key, 1, 1) == "d" ~ "Direct",
                              TRUE ~ "Indirect"),
-         Comparison = case_when(substr(key, 2, 2) == "f" ~ "Pathogen inoculation - Control (water)",
+         Comparison = case_when(substr(key, 2, 2) == "f" ~ "Pathogen inoculation - mock inoculation",
                                 substr(key, 2, 2) == "s" ~ "Eragrostis - Dichanthelium",
                                 substr(key, 2, 2) == "v" ~ "Elymus - Dichanthelium",
                                 substr(key, 2, 2) == "e" ~ "Eragrostis - Elymus"),
@@ -363,11 +363,11 @@ write_csv(nat_table, "./output/native_biomass_density_table.csv")
 
 # separate data
 mvdatc <- filter(dat4, species == "C") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
+  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
 mvdats <- filter(dat4, species == "S") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
+  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
 mvdatv <- filter(dat4, species == "V") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"))
+  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
 
 mv_sim_datc <- filter(mv_sim_dat, species == "C")
 mv_sim_dats <- filter(mv_sim_dat, species == "S")

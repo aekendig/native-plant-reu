@@ -33,7 +33,7 @@ filter(dat, notes == "Probably inoculated") %>% data.frame()
 # add columns
 dat1 <- dat %>%
   mutate(fungus = recode(treatment, "F" = 1, "W" = 0),
-         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "control (water)"),
+         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"),
          Species = recode(species, "C" = "Dichanthelium\nclandestinum", "V" = "Elymus\nvirginicus", "S" = "Eragrostis\nspectabilis"),
          mv_leaves_avg = rowMeans(cbind(mv_leaves_stem_1, mv_leaves_stem_2, mv_leaves_stem_3), na.rm = T),
          mv_leaves_est = round(mv_leaves_avg) * density,
@@ -177,7 +177,7 @@ ggplot(mvdat, aes(x = density, y = mv_prop_infec)) +
 #### native infection figure ####
 
 # colors
-col_pal = c("#80cdc1", "#dfc27d")
+col_pal = c("#66c2a4", "#dfc27d")
 
 # number of plants
 dat1 %>% 
@@ -350,7 +350,7 @@ write_csv(mv_coef, "./output/mv_infection_density_coefficients.csv")
 #### mv leaf figure ####
 
 # colors
-col_pal2 = c("#018571", "#a6611a")
+col_pal2 = c("#55A48B", "#C0A76D")
 
 # separate by species
 ldatc <- filter(leafdat, species == "C")

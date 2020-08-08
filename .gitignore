@@ -38,6 +38,8 @@ vignettes/*.pdf
 # data
 /data/
 /intermediate-data/
+/metadata/
+/edi/
 
 # manuscript
 /manuscript/

@@ -357,6 +357,33 @@ nat_table <- nat_diff %>%
 write_csv(nat_table, "./output/native_biomass_density_table.csv")
 
 
+#### native biomass values ####
+
+# extract alpha values
+nat_vals <- nat_post %>%
+  select(b_alpha_spfungusCcontrol:b_alpha_spfungusVinoculation) %>%
+  mutate(samples = 1:15000,
+         b_alpha_spfungusCdifference = b_alpha_spfungusCinoculation - b_alpha_spfungusCcontrol,
+         b_alpha_spfungusSdifference = b_alpha_spfungusSinoculation - b_alpha_spfungusScontrol,
+         b_alpha_spfungusVdifference = b_alpha_spfungusVinoculation - b_alpha_spfungusVcontrol) %>% 
+  pivot_longer(cols = starts_with("b_alpha_spfungus"),
+               names_to = "spfungus",
+               values_to = "alpha",
+               names_prefix = "b_alpha_spfungus") %>%
+  mutate(species = substring(spfungus, 1, 1),
+         fungus = substring(spfungus, 2, 12))
+
+# summarize by treatment
+nat_vals %>%
+  group_by(species, fungus) %>%
+  mean_hdi(alpha)
+
+# summarize by fungus
+nat_vals %>%
+  group_by(fungus) %>%
+  mean_hdi(alpha)
+
+
 #### mv biomass figure ####
 
 # separate data

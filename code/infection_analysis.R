@@ -17,6 +17,7 @@ library(cowplot) # version 1.0.0
 library(grid) # version 4.0.1
 library(gridExtra) # version 2.3
 library(extrafont) # version 0.17
+library(tidybayes) # version 2.0.3
 
 # import data
 dat <- read_csv("./data/infection_20190809.csv")
@@ -264,7 +265,7 @@ grid.arrange(arrangeGrob(nat_plot_comb, bottom = x_plot_nat, left = y_plot_nat))
 dev.off()
 
 
-#### mv infection figure ####
+#### mv leaf infection figure ####
 
 # proportion by density
 mv_prop <- mvdat %>%
@@ -280,12 +281,12 @@ mvdatl <- mvdat %>%
   left_join(mv_prop)
 
 # separate by species
-mvdatc <- filter(mvdatl, species == "C")
-mvdatv <- filter(mvdatl, species == "V")
-mvdats <- filter(mvdatl, species == "S")
+mvdatlc <- filter(mvdatl, species == "C")
+mvdatlv <- filter(mvdatl, species == "V")
+mvdatls <- filter(mvdatl, species == "S")
 
 # figures
-mv_plot_c <- ggplot(mvdatc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
+mv_plot_c <- ggplot(mvdatlc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
@@ -297,7 +298,7 @@ mv_plot_c <- ggplot(mvdatc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
         plot.title = element_text(size = 9.5, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
-mv_plot_v <- ggplot(mvdatv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
+mv_plot_v <- ggplot(mvdatlv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
@@ -308,7 +309,7 @@ mv_plot_v <- ggplot(mvdatv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
         plot.title = element_text(size = 9.5, hjust = 0.5)) +
   coord_cartesian(ylim = c(0, 840))
 
-mv_plot_s <- ggplot(mvdats, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
+mv_plot_s <- ggplot(mvdatls, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
@@ -338,8 +339,96 @@ x_plot_mv <- x_plot_nat
 mv_plot_comb2 <- grid.arrange(arrangeGrob(mv_plot_comb, bottom = x_plot_mv, left = y_plot_mv))
 
 # save plot
-tiff("./output/Fig2.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
+tiff("./output/S1Fig.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(mv_plot_comb2, bottom = mv_plot_leg, padding = unit(1, "line")))
+dev.off()
+
+
+#### mv percent infection figure ####
+
+# colors
+col_pal2 = c("#55A48B", "#C0A76D")
+
+# max and min leaf estimate values
+mvdat %>%
+  group_by(density) %>%
+  summarise(mean_leaves = mean(mv_leaves_est))
+
+# simulate data
+mv_perc_sim_dat <- tibble(density = 0:100,
+                          mv_leaves_est = seq(42, 658, length.out = 101) %>% 
+                            round()) %>%
+  expand_grid(species = unique(mvdat$species)) %>%
+  mutate(mv_leaves_infec = fitted(mv_mod_infec, newdata = ., type = "response")[, "Estimate"],
+         mv_leaves_infec_lower = fitted(mv_mod_infec, newdata = ., type = "response")[, "Q2.5"],
+         mv_leaves_infec_upper = fitted(mv_mod_infec, newdata = ., type = "response")[, "Q97.5"],
+         mv_perc_infec = mv_leaves_infec / mv_leaves_est * 100,
+         mv_perc_infec_lower = mv_leaves_infec_lower / mv_leaves_est * 100,
+         mv_perc_infec_upper = mv_leaves_infec_upper / mv_leaves_est * 100) 
+
+# split data by species
+mvdatc <- filter(mvdat, species == "C") %>%
+  mutate(mv_perc_infec = mv_prop_infec * 100)
+mvdatv <- filter(mvdat, species == "V") %>%
+  mutate(mv_perc_infec = mv_prop_infec * 100)
+mvdats <- filter(mvdat, species == "S") %>%
+  mutate(mv_perc_infec = mv_prop_infec * 100)
+
+mv_perc_sim_datc <- filter(mv_perc_sim_dat, species == "C")
+mv_perc_sim_datv <- filter(mv_perc_sim_dat, species == "V")
+mv_perc_sim_dats <- filter(mv_perc_sim_dat, species == "S")
+
+# plot model
+perc_plot_c <- ggplot(mvdatc, aes(x = density, y = mv_perc_infec)) +
+  geom_ribbon(data = mv_perc_sim_datc, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
+  geom_line(data = mv_perc_sim_datc, color = col_pal2[2]) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
+  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
+  coord_cartesian(ylim = c(2.5, 22)) +
+  ylab(expression(atop(NA, atop(paste("Percentage ", italic(Microstegium), sep = ""), " leaves with lesions")))) +
+  theme_def +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 9.5, hjust = 1),
+        axis.title.y = element_text(size = 12),
+        plot.margin = margin(5.5, 5.5, 5.5, -2))
+
+perc_plot_v <- ggplot(mvdatv, aes(x = density, y = mv_perc_infec)) +
+  geom_ribbon(data = mv_perc_sim_datv, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
+  geom_line(data = mv_perc_sim_datv, color = col_pal2[2]) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
+  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
+  coord_cartesian(ylim = c(2.5, 22)) +
+  theme_def +
+  theme(plot.title = element_text(size = 9.5, hjust = 0.5))
+
+perc_plot_s <- ggplot(mvdats, aes(x = density, y = mv_perc_infec)) +
+  geom_ribbon(data = mv_perc_sim_dats, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
+  geom_line(data = mv_perc_sim_dats, color = col_pal2[2]) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
+  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
+  coord_cartesian(ylim = c(2.5, 22)) +
+  theme_def +
+  theme(plot.title = element_text(size = 9.5, hjust = 0.5))
+
+# combine plots
+perc_plot_comb <- plot_grid(perc_plot_c,
+                            perc_plot_v,
+                            perc_plot_s,
+                          nrow = 1,
+                          labels = LETTERS[1:3],
+                          label_size = 10,
+                          rel_widths = c(1, 0.8, 0.8),
+                          hjust = c(-2.5, 0, 0))
+
+# axes
+x_plot_perc <- x_plot_mv
+
+# save plot
+tiff("./output/Fig2.tiff", width = 5.2, height = 2, units = "in", res = 300)
+grid.arrange(arrangeGrob(perc_plot_comb, bottom = x_plot_perc))
 dev.off()
 
 
@@ -353,10 +442,39 @@ mv_coef <- fixef(mv_mod_infec) %>%
 write_csv(mv_coef, "./output/mv_infection_density_coefficients.csv")
 
 
-#### mv leaf figure ####
+#### mv infection values ####
 
-# colors
-col_pal2 = c("#55A48B", "#C0A76D")
+# percent changes
+mv_samps_infec <- posterior_samples(mv_mod_infec) %>%
+  rename("b_density_speciesV" = "b_density:speciesV",
+         "b_density_speciesS" = "b_density:speciesS") %>%
+  mutate(C_2 = exp(b_Intercept + b_density * 2)/(1 + exp(b_Intercept + b_density * 2)),
+         S_2 = exp(b_Intercept + b_speciesS + b_density * 2 + b_density_speciesS * 2)/(1 + exp(b_Intercept + b_speciesS + b_density * 2 + b_density_speciesS * 2)),
+         V_2 = exp(b_Intercept + b_speciesV + b_density * 2 + b_density_speciesV * 2)/(1 + exp(b_Intercept + b_speciesV + b_density * 2 + b_density_speciesV * 2)),
+         C_100 = exp(b_Intercept + b_density * 100)/(1 + exp(b_Intercept + b_density * 100)),
+         S_100 = exp(b_Intercept + b_speciesS + b_density * 100 + b_density_speciesS * 100)/(1 + exp(b_Intercept + b_speciesS + b_density * 100 + b_density_speciesS * 100)),
+         V_100 = exp(b_Intercept + b_speciesV + b_density * 100 + b_density_speciesV * 100)/(1 + exp(b_Intercept + b_speciesV + b_density * 100 + b_density_speciesV * 100)),
+         C_chg = C_100 - C_2,
+         S_chg = S_100 - S_2,
+         V_chg = V_100 - V_2,
+         samples = 1:15000) %>%
+  select(C_2:samples) %>%
+  pivot_longer(cols = C_2:V_chg, names_to = "sp_dens", values_to = "incidence") %>%
+  mutate(species = substring(sp_dens, 1, 1),
+         density = substring(sp_dens, 3, 5))
+
+# summarize by species and density
+mv_samps_infec %>%
+  group_by(species, density) %>%
+  mean_hdi(incidence)
+
+# summarize by density
+mv_samps_infec %>%
+  group_by(density) %>%
+  mean_hdi(incidence)
+
+
+#### mv leaf figure ####
 
 # separate by species
 ldatc <- filter(leafdat, species == "C")
@@ -415,6 +533,6 @@ leaf_plot_comb2 <- grid.arrange(arrangeGrob(leaf_plot_comb, bottom = x_plot_leaf
 leg_leaf <- get_legend(leaf_plot_s)
 
 # save plot
-tiff("./output/S1Fig.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
+tiff("./output/leaf_fig.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
 grid.arrange(arrangeGrob(leaf_plot_comb2, bottom = leg_leaf, padding = unit(1, "line")))
 dev.off()

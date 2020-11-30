@@ -444,6 +444,13 @@ write_csv(mv_coef, "./output/mv_infection_density_coefficients.csv")
 
 #### mv infection values ####
 
+# pots with infection
+mvdat %>%
+  mutate(infec = as.numeric(mv_leaves_infec > 0)) %>%
+  summarise(prop = sum(infec)/length(infec),
+            n_infec = sum(infec),
+            n_tot = length(infec))
+
 # percent changes
 mv_samps_infec <- posterior_samples(mv_mod_infec) %>%
   rename("b_density_speciesV" = "b_density:speciesV",

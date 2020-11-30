@@ -106,7 +106,7 @@ dat2 <- filter(dat1, !is.na(nat_biomass))
 # combine species and fungus treatments into one variable
 dat3 <- dat2 %>%
   mutate(spfungus = paste(species, fungusF, sep = ""),
-         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
+         Treatment = recode(treatment, "F" = "B. gigantea inoculation", "W" = "mock inoculation (control)"))
 
 # model
 nat_mod_2 <- brm(data = dat3, family = gaussian,
@@ -138,7 +138,7 @@ nat_sim_dat <- tibble(density = seq(0, 100, length.out = 300)) %>%
   mutate(nat_biomass = fitted(nat_mod_3, newdata = .)[, "Estimate"],
          nat_biomass_lower = fitted(nat_mod_3, newdata = .)[, "Q2.5"],
          nat_biomass_upper = fitted(nat_mod_3, newdata = .)[, "Q97.5"],
-         Treatment = recode(fungusF, "inoculation" = "pathogen inoculation", "control" = "mock inoculation (control)")) 
+         Treatment = recode(fungusF, "inoculation" = "B. gigantea inoculation", "control" = "mock inoculation (control)")) 
 
 # plot model
 ggplot(dat3, aes(x = density, y = nat_biomass)) +
@@ -182,7 +182,7 @@ mv_sim_dat <- tibble(density = seq(0, 100, length.out = 300)) %>%
   mutate(mv_biomass = fitted(mv_mod, newdata = .)[, "Estimate"],
          mv_biomass_lower = fitted(mv_mod, newdata = .)[, "Q2.5"],
          mv_biomass_upper = fitted(mv_mod, newdata = .)[, "Q97.5"],
-         Treatment = recode(fungus, "1" = "pathogen inoculation", "0" = "mock inoculation (control)")) 
+         Treatment = recode(fungus, "1" = "B. gigantea inoculation", "0" = "mock inoculation (control)")) 
 
 # plot model
 ggplot(dat4, aes(x = density, y = mv_biomass)) +
@@ -197,10 +197,10 @@ ggplot(dat4, aes(x = density, y = mv_biomass)) +
 # coefficients
 nat_coef <- fixef(nat_mod_3) %>%
   as_tibble() %>%
-  mutate(Parameter = rep(c("b0", "alpha"), each = 6),
-         Treatment = rep(c("mock inoculation (control)", "pathogen inoculation"), 6),
-         species = rep(rep(c("C", "S", "V"), each = 2), 2)) %>%
-  mutate(Disease = recode(Parameter, "b0" = "Direct", "alpha" = "Indirect"))
+  mutate(Parameter = rep(c("b0", "alpha"), each = 6) %>%
+           fct_relevel("b0"),
+         Treatment = rep(c("mock inoculation (control)", "B. gigantea inoculation"), 6),
+         species = rep(rep(c("C", "S", "V"), each = 2), 2))
 
 # split by species
 nat_coef_c <- filter(nat_coef, species == "C")
@@ -232,14 +232,16 @@ theme_def <- theme_bw(base_family = "Arial") +
         plot.title = element_text(size = 10, face = "italic", hjust = 0.5))
 
 # colors
-col_pal = c("#55A48B", "#C0A76D")
+col_pal = c("#C0A76D", "#55A48B")
 
 # parameter plots
-par_plot_c <- ggplot(nat_coef_c, aes(x = Disease, y = Estimate, color = Treatment)) +
+par_plot_c <- ggplot(nat_coef_c, aes(x = Parameter, y = Estimate, color = Treatment)) +
   geom_errorbar(aes(ymin = Q2.5, ymax = Q97.5), position = position_dodge(0.5), width = 0) +
   geom_point(size = 2, position = position_dodge(0.5))+
   scale_color_manual(values = col_pal) +
   scale_y_continuous(limits = c(0, 8)) +
+  scale_x_discrete(labels = c("b0" = expression(b[0]),
+                              "alpha" = expression(alpha))) +
   theme_def +
   theme(legend.position = "none",
         axis.title.y = element_text(size = 8),
@@ -285,8 +287,12 @@ dens_plot_v <- ggplot(datv, aes(x = density, y = nat_biomass, color = Treatment,
   stat_summary(geom = "point", fun = "mean", size = 2) +
   annotation_custom(ggplotGrob(par_plot_v), xmin = 10, xmax = 105, ymin = 1, ymax = 4.2) +
   ggtitle("Elymus") +
-  scale_color_manual(values = col_pal) +
-  scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal,
+                     labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  scale_fill_manual(values = col_pal,
+                    labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  scale_linetype_manual(values = c("solid", "dashed"),
+                        labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
   scale_y_continuous(limits = c(0, 4.2)) +
   theme_def
   
@@ -316,45 +322,53 @@ dev.off()
 
 #### native biomass table ####
 
+# extract coefficients
+nat_coef_table <- fixef(nat_mod_3) %>%
+  as_tibble(rownames = "Coefficient")
+# manually edit rownames
+
+# save
+write_csv(nat_coef_table, "./output/native_biomass_density_coefficients.csv")
+
 # extract posterior samples
 nat_post <- posterior_samples(nat_mod_3)
 
-# calculate differences
-nat_diff <- nat_post %>%
-  transmute(dfv = b_b0_spfungusVinoculation - b_b0_spfungusVcontrol,
-            dfs = b_b0_spfungusSinoculation - b_b0_spfungusScontrol,
-            dfc = b_b0_spfungusCinoculation - b_b0_spfungusCcontrol,
-            ifv = b_alpha_spfungusVinoculation - b_alpha_spfungusVcontrol,
-            ifs = b_alpha_spfungusSinoculation - b_alpha_spfungusScontrol,
-            ifc = b_alpha_spfungusCinoculation - b_alpha_spfungusCcontrol,
-            dvc = b_b0_spfungusVcontrol - b_b0_spfungusCcontrol,
-            dsc = b_b0_spfungusScontrol - b_b0_spfungusCcontrol,
-            dev = b_b0_spfungusScontrol - b_b0_spfungusVcontrol,
-            ivc = b_alpha_spfungusVcontrol - b_alpha_spfungusCcontrol,
-            isc = b_alpha_spfungusScontrol - b_alpha_spfungusCcontrol,
-            iev = b_alpha_spfungusScontrol - b_alpha_spfungusVcontrol) %>%
-  gather() %>%
-  mutate(Disease = case_when(substr(key, 1, 1) == "d" ~ "Direct",
-                             TRUE ~ "Indirect"),
-         Comparison = case_when(substr(key, 2, 2) == "f" ~ "Pathogen inoculation - mock inoculation",
-                                substr(key, 2, 2) == "s" ~ "Eragrostis - Dichanthelium",
-                                substr(key, 2, 2) == "v" ~ "Elymus - Dichanthelium",
-                                substr(key, 2, 2) == "e" ~ "Eragrostis - Elymus"),
-         Species = case_when(substr(key, 3, 3) == "v"  ~ "Elymus virginicus",
-                             substr(key, 3, 3) == "s"  ~ "Eragrostis spectabilis",
-                             substr(key, 3, 3) == "c"  ~ "Dichanthelium clandestinum")) %>%
-  select(-key)
-head(nat_diff)
-
-# Mean values
-nat_table <- nat_diff %>%
-  group_by(Comparison, Species, Disease) %>%
-  mean_hdi() %>%
-  ungroup() %>%
-  rename("Estimate" = value, "Q2.5" = .lower, "Q97.5" = .upper)
-
-# save
-write_csv(nat_table, "./output/native_biomass_density_table.csv")
+# # calculate differences
+# nat_diff <- nat_post %>%
+#   transmute(dfv = b_b0_spfungusVinoculation - b_b0_spfungusVcontrol,
+#             dfs = b_b0_spfungusSinoculation - b_b0_spfungusScontrol,
+#             dfc = b_b0_spfungusCinoculation - b_b0_spfungusCcontrol,
+#             ifv = b_alpha_spfungusVinoculation - b_alpha_spfungusVcontrol,
+#             ifs = b_alpha_spfungusSinoculation - b_alpha_spfungusScontrol,
+#             ifc = b_alpha_spfungusCinoculation - b_alpha_spfungusCcontrol,
+#             dvc = b_b0_spfungusVcontrol - b_b0_spfungusCcontrol,
+#             dsc = b_b0_spfungusScontrol - b_b0_spfungusCcontrol,
+#             dev = b_b0_spfungusScontrol - b_b0_spfungusVcontrol,
+#             ivc = b_alpha_spfungusVcontrol - b_alpha_spfungusCcontrol,
+#             isc = b_alpha_spfungusScontrol - b_alpha_spfungusCcontrol,
+#             iev = b_alpha_spfungusScontrol - b_alpha_spfungusVcontrol) %>%
+#   gather() %>%
+#   mutate(Disease = case_when(substr(key, 1, 1) == "d" ~ "Direct",
+#                              TRUE ~ "Indirect"),
+#          Comparison = case_when(substr(key, 2, 2) == "f" ~ "B. gigantea inoculation - mock inoculation",
+#                                 substr(key, 2, 2) == "s" ~ "Eragrostis - Dichanthelium",
+#                                 substr(key, 2, 2) == "v" ~ "Elymus - Dichanthelium",
+#                                 substr(key, 2, 2) == "e" ~ "Eragrostis - Elymus"),
+#          Species = case_when(substr(key, 3, 3) == "v"  ~ "Elymus virginicus",
+#                              substr(key, 3, 3) == "s"  ~ "Eragrostis spectabilis",
+#                              substr(key, 3, 3) == "c"  ~ "Dichanthelium clandestinum")) %>%
+#   select(-key)
+# head(nat_diff)
+# 
+# # Mean values
+# nat_table <- nat_diff %>%
+#   group_by(Comparison, Species, Disease) %>%
+#   mean_hdi() %>%
+#   ungroup() %>%
+#   rename("Estimate" = value, "Q2.5" = .lower, "Q97.5" = .upper)
+# 
+# # save
+# write_csv(nat_table, "./output/native_biomass_density_table.csv")
 
 
 #### native biomass values ####
@@ -388,11 +402,11 @@ nat_vals %>%
 
 # separate data
 mvdatc <- filter(dat4, species == "C") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
+  mutate(Treatment = recode(treatment, "F" = "B. gigantea inoculation", "W" = "mock inoculation (control)"))
 mvdats <- filter(dat4, species == "S") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
+  mutate(Treatment = recode(treatment, "F" = "B. gigantea inoculation", "W" = "mock inoculation (control)"))
 mvdatv <- filter(dat4, species == "V") %>%
-  mutate(Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"))
+  mutate(Treatment = recode(treatment, "F" = "B. gigantea inoculation", "W" = "mock inoculation (control)"))
 
 mv_sim_datc <- filter(mv_sim_dat, species == "C")
 mv_sim_dats <- filter(mv_sim_dat, species == "S")
@@ -446,8 +460,12 @@ mv_plot_v <- ggplot(mvdatv_sum, aes(x = density, y = mv_biomass,
   geom_errorbar(width = 0.1, alpha = 0.5) +
   geom_point(size = 2) +
   ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
-  scale_color_manual(values = col_pal) +
-  scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal,
+                     labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  scale_fill_manual(values = col_pal,
+                    labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  scale_linetype_manual(values = c("solid", "dashed"),
+                        labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
   theme_def +
   theme(plot.title = element_text(size = 9.5, hjust = 0.5)) +
   scale_y_continuous(breaks = c(0, 3, 6, 9, 12), limits = c(0, 14))

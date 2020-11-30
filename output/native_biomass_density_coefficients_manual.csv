@@ -1,0 +1,13 @@
+Coefficient,Estimate,Est.Error,Q2.5,Q97.5
+"b0 Dichanthelium, mock inoculation",2.10,0.14,1.82,2.38
+"b0 Dichanthelium, B. gigantea inoculation",3.30,0.14,3.02,3.57
+"b0 Elymus, mock inoculation",1.89,0.14,1.61,2.17
+"b0 Elymus, B. gigantea inoculation",1.29,0.14,1.03,1.56
+"b0 Eragrostis, mock inoculation",1.02,0.14,0.75,1.29
+"b0 Eragrostis, B. gigantea inoculation",0.85,0.14,0.58,1.12
+"alpha Dichanthelium, mock inoculation",1.98,0.89,0.93,4.27
+"alpha Dichanthelium, B. gigantea inoculation",2.01,0.57,1.21,3.39
+"alpha Elymus, mock inoculation",3.49,1.74,1.40,7.99
+"alpha Elymus, B. gigantea inoculation",2.49,1.55,0.78,6.65
+"alpha Eragrostis, mock inoculation",2.94,1.91,0.76,7.91
+"alpha Eragrostis, B. gigantea inoculation",2.20,1.70,0.44,6.79

@@ -88,7 +88,7 @@ cnlist <- c("Biomass analysis",
 
 make_eml(path = "./metadata",
          data.path = "./edi",
-         dataset.title = "Emerging fungal pathogen on an invasive grass differentially affects native species",
+         dataset.title = "Emerging fungal pathogen differentially affects three native plant species that compete with an invasive grass",
          data.table = dlist,
          data.table.name = dnlist,
          data.table.description = ddlist,
@@ -102,12 +102,12 @@ make_eml(path = "./metadata",
          maintenance.description = "completed", 
          user.id = "aekendig",
          user.domain = "EDI",
-         package.id = "edi.63.1")
+         package.id = "edi.63.2")
 
 
 #### check warnings ####
 
-eml <- EML::read_eml("./metadata/edi.63.1.xml")
+eml <- EML::read_eml("./metadata/edi.63.2.xml")
 EML::eml_validate(eml)
 
 

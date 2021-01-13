@@ -22,6 +22,22 @@ library(tidybayes) # version 2.0.3
 # import data
 dat <- read_csv("./data/infection_20190809.csv")
 
+# default theme
+theme_def <- theme_bw(base_family = "Arial") +
+  theme(axis.text = element_text(size = 8, color="black"),
+        axis.title = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.box.margin = margin(-10, -10, -10, -10),
+        plot.title = element_text(size = 10, face = "italic", hjust = 0.5))
+
+# colors
+col_pal = c("#C0A76D", "#55A48B")
+col_pal2 <- c("#66c2a4", "#dfc27d")
+
 
 #### edit data ####
 
@@ -32,8 +48,9 @@ filter(dat, notes == "Probably inoculated") %>% data.frame()
 # add columns
 dat1 <- dat %>%
   mutate(fungus = recode(treatment, "F" = 1, "W" = 0),
-         Treatment = recode(treatment, "F" = "pathogen inoculation", "W" = "mock inoculation (control)"),
+         Treatment = recode(treatment, "F" = "B. gigantea inoculation", "W" = "mock inoculation (control)"),
          Species = recode(species, "C" = "Dichanthelium\nclandestinum", "V" = "Elymus\nvirginicus", "S" = "Eragrostis\nspectabilis"),
+         species = fct_relevel(species, "C", "V", "S"),
          mv_leaves_avg = rowMeans(cbind(mv_leaves_stem_1, mv_leaves_stem_2, mv_leaves_stem_3), na.rm = T),
          mv_leaves_est = round(mv_leaves_avg) * density,
          mv_prop_infec = mv_leaves_infec / mv_leaves_est,
@@ -86,8 +103,7 @@ ggplot(dat1, aes(x = mv_prop_infec, y = native_prop_infec, color = treatment)) +
 leafdat <- filter(dat1, !is.na(mv_leaves_stem_1)) %>%
   select(c(treatment:replicate, fungus, Treatment, mv_leaves_stem_1:mv_leaves_stem_3)) %>%
   gather(key = stem, value = leaves, -c(treatment:Treatment)) %>%
-  mutate(species = fct_relevel(species, "C", "V", "S"),
-         stem = str_extract(stem, "[[:digit:]]+"),
+  mutate(stem = str_extract(stem, "[[:digit:]]+"),
          pot = paste(treatment, density, species, replicate, sep = ""),
          density_scaled = (density - mean(density)) / sd(density)) %>%
   filter(!is.na(leaves))
@@ -140,8 +156,7 @@ var(leafdat$leaves)
 
 # remove missing data
 # reorder species
-mvdat <- filter(dat1, !is.na(mv_leaves_est) & treatment == "F") %>%
-  mutate(species = fct_relevel(species, "C", "V", "S"))
+mvdat <- filter(dat1, !is.na(mv_leaves_est) & treatment == "F")
 
 # model
 mv_mod_infec <- brm(data = mvdat, family = binomial,
@@ -175,9 +190,6 @@ ggplot(mvdat, aes(x = density, y = mv_prop_infec)) +
 
 #### native infection figure ####
 
-# colors
-col_pal = c("#66c2a4", "#dfc27d")
-
 # number of plants
 dat1 %>% 
   filter(treatment == "F") %>%
@@ -191,77 +203,72 @@ dat1 %>%
   summarise(n = n(),
             native_prop_infec = mean(native_prop_infec))
 
-# format data - used for leaf counts
-# natdat <- filter(dat1, treatment == "F") %>%
-#   mutate(native_leaves_healthy = case_when(native_leaves_infec == 0 ~ NA_real_,
-#                                            TRUE ~ native_leaves_healthy),
-#          native_leaves_infec = case_when(native_leaves_infec == 0 ~ NA_real_,
-#                                          TRUE ~ native_leaves_infec)) %>%
-#   select(species, Species, density, replicate, native_leaves_infec, native_leaves_healthy) %>%
-#   gather(key = infection, value = native_leaves, -c(species:replicate)) %>%
-#   mutate(densityf = as.factor(density),
-#          Lesions = recode(infection, native_leaves_infec = "yes", native_leaves_healthy = "no"))
-
 # format data
-natdat <- filter(dat1, treatment == "F") %>%
+natdat <- dat1 %>%
   mutate(densityf = as.factor(density),
-         Lesions = case_when(native_leaves_infec == 0 ~ "no",
-                             native_leaves_infec > 0 ~ "yes"),
-         native_plants = 1)
+         lesions = case_when(native_leaves_infec == 0 ~ 0,
+                             native_leaves_infec > 0 ~ 1)) %>%
+  group_by(species, densityf, Treatment) %>%
+  summarise(plants_lesions = sum(lesions)) %>%
+  ungroup()
 
 # separate by species
 natdatc <- filter(natdat, species == "C")
 natdatv <- filter(natdat, species == "V")
 natdats <- filter(natdat, species == "S")
 
-# default theme
-theme_def <- theme_bw(base_family = "Arial") +
-  theme(axis.text = element_text(size = 8, color="black"),
-        axis.title = element_blank(),
-        panel.background = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.box.margin = margin(-10, -10, -10, -10),
-        plot.title = element_text(size = 10, face = "italic", hjust = 0.5))
-
 # figures
-nat_plot_c <- ggplot(natdatc, aes(x = densityf, y = native_plants, fill = Lesions)) +
-  geom_bar(stat = "identity") +
+nat_plot_c <- ggplot(natdatc, aes(x = densityf, y = plants_lesions, fill = Treatment, color = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
   scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal) +
+  coord_cartesian(ylim = c(0, 4)) +
   ggtitle("Dichanthelium") +
-  theme_def 
+  theme_def +
+  theme(legend.position = "none")
 
-nat_plot_v <- ggplot(natdatv, aes(x = densityf, y = native_plants, fill = Lesions)) +
-  geom_bar(stat = "identity") +
-  scale_fill_manual(values = col_pal) +
+nat_plot_v <- ggplot(natdatv, aes(x = densityf, y = plants_lesions, fill = Treatment, color = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_color_manual(values = col_pal,
+                     labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  scale_fill_manual(values = col_pal,
+                    labels = c("B. gigantea inoculation" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")))) +
+  coord_cartesian(ylim = c(0, 4)) +
   ggtitle("Elymus") +
-  theme_def
+  theme_def +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal")
 
-nat_plot_s <- ggplot(natdats, aes(x = densityf, y = native_plants, fill = Lesions)) +
-  geom_bar(stat = "identity") +
+nat_plot_s <- ggplot(natdats, aes(x = densityf, y = plants_lesions, fill = Treatment, color = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
   scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal) +
+  coord_cartesian(ylim = c(0, 4)) +
   ggtitle("Eragrostis") +
   theme_def +
-  theme(legend.box.margin = margin(-10, -5, -10, -10))
+  theme(legend.position = "none")
 
 # combine plots
-nat_plot_comb <- plot_grid(nat_plot_c + theme(legend.position = "none"),
+nat_plot_comb <- plot_grid(nat_plot_c,
                            nat_plot_v + theme(legend.position = "none"),
                            nat_plot_s,
                            nrow = 1,
                            labels = LETTERS[1:3],
-                           label_size = 10,
-                           rel_widths = c(1, 1, 1.4))
+                           label_size = 10)
 
 # axes
-y_plot_nat <- textGrob("Plants", gp = gpar(fontsize = 10), rot = 90)
+y_plot_nat <- textGrob("Native plants with lesions", gp = gpar(fontsize = 10), rot = 90)
 x_plot_nat <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 10))
 
+# combine
+nat_plot_comb2 <- grid.arrange(arrangeGrob(nat_plot_comb, bottom = x_plot_nat, left = y_plot_nat))
+
+# legend
+nat_leg <- get_legend(nat_plot_v)
+
 # save plot
-tiff("./output/Fig3.tiff", width = 5.2, height = 2, units = "in", res = 300)
-grid.arrange(arrangeGrob(nat_plot_comb, bottom = x_plot_nat, left = y_plot_nat))
+tiff("./output/Fig3.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
+grid.arrange(arrangeGrob(nat_plot_comb2, bottom = nat_leg, padding = unit(1, "line")))
 dev.off()
 
 
@@ -290,7 +297,7 @@ mv_plot_c <- ggplot(mvdatlc, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
-  scale_fill_manual(values = col_pal) +
+  scale_fill_manual(values = col_pal2) +
   ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
   theme_def +
   theme(legend.position = "bottom",
@@ -302,7 +309,7 @@ mv_plot_v <- ggplot(mvdatlv, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
-  scale_fill_manual(values = col_pal) +
+  scale_fill_manual(values = col_pal2) +
   ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
   theme_def +
   theme(legend.position = "none",
@@ -313,7 +320,7 @@ mv_plot_s <- ggplot(mvdatls, aes(x = densityf, y = mv_leaves, fill = Lesions)) +
   stat_summary(geom = "bar", fun = "mean") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0.1, alpha = 0.5) +
   geom_text(y = 840, aes(label = mv_prop_infec), check_overlap = T, size = 2.3) +
-  scale_fill_manual(values = col_pal) +
+  scale_fill_manual(values = col_pal2) +
   ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
   theme_def +
   theme(legend.position = "none",
@@ -333,7 +340,7 @@ mv_plot_comb <- plot_grid(mv_plot_c + theme(legend.position = "none"),
 
 # axes
 y_plot_mv <- textGrob(expression(paste(italic(Microstegium), " leaves per pot", sep = "")), gp = gpar(fontsize = 10), rot = 90)
-x_plot_mv <- x_plot_nat
+x_plot_mv <- textGrob(expression(paste(italic(Microstegium), " density in pots inoculated with ", italic("B. gigantea"), sep = "")), gp = gpar(fontsize = 10))
 
 # add legend
 mv_plot_comb2 <- grid.arrange(arrangeGrob(mv_plot_comb, bottom = x_plot_mv, left = y_plot_mv))
@@ -346,9 +353,6 @@ dev.off()
 
 #### mv percent infection figure ####
 
-# colors
-col_pal2 = c("#55A48B", "#C0A76D")
-
 # max and min leaf estimate values
 mvdat %>%
   group_by(density) %>%
@@ -358,20 +362,21 @@ mvdat %>%
 mv_perc_sim_dat <- tibble(density = 0:100,
                           mv_leaves_est = seq(42, 658, length.out = 101) %>% 
                             round()) %>%
-  expand_grid(species = unique(mvdat$species)) %>%
+  expand_grid(species = rep(unique(dat1$species), each = 2),
+              treatment = rep(c("F", "W"), 3)) %>%
   mutate(mv_leaves_infec = fitted(mv_mod_infec, newdata = ., type = "response")[, "Estimate"],
          mv_leaves_infec_lower = fitted(mv_mod_infec, newdata = ., type = "response")[, "Q2.5"],
          mv_leaves_infec_upper = fitted(mv_mod_infec, newdata = ., type = "response")[, "Q97.5"],
-         mv_perc_infec = mv_leaves_infec / mv_leaves_est * 100,
-         mv_perc_infec_lower = mv_leaves_infec_lower / mv_leaves_est * 100,
-         mv_perc_infec_upper = mv_leaves_infec_upper / mv_leaves_est * 100) 
+         mv_perc_infec = ifelse(treatment == "F", mv_leaves_infec / mv_leaves_est * 100, 0),
+         mv_perc_infec_lower = ifelse(treatment == "F", mv_leaves_infec_lower / mv_leaves_est * 100, 0),
+         mv_perc_infec_upper = ifelse(treatment == "F", mv_leaves_infec_upper / mv_leaves_est * 100, 0)) 
 
 # split data by species
-mvdatc <- filter(mvdat, species == "C") %>%
+mvdatc <- filter(dat1, species == "C" & !is.na(mv_prop_infec)) %>%
   mutate(mv_perc_infec = mv_prop_infec * 100)
-mvdatv <- filter(mvdat, species == "V") %>%
+mvdatv <- filter(dat1, species == "V" & !is.na(mv_prop_infec)) %>%
   mutate(mv_perc_infec = mv_prop_infec * 100)
-mvdats <- filter(mvdat, species == "S") %>%
+mvdats <- filter(dat1, species == "S" & !is.na(mv_prop_infec)) %>%
   mutate(mv_perc_infec = mv_prop_infec * 100)
 
 mv_perc_sim_datc <- filter(mv_perc_sim_dat, species == "C")
@@ -380,13 +385,15 @@ mv_perc_sim_dats <- filter(mv_perc_sim_dat, species == "S")
 
 # plot model
 perc_plot_c <- ggplot(mvdatc, aes(x = density, y = mv_perc_infec)) +
-  geom_ribbon(data = mv_perc_sim_datc, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
-  geom_line(data = mv_perc_sim_datc, color = col_pal2[2]) +
-  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
-  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  geom_ribbon(data = mv_perc_sim_datc, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper, fill = treatment), alpha = 0.5, color = NA) +
+  geom_line(data = mv_perc_sim_datc, aes(color = treatment)) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, aes(color = treatment)) +
+  stat_summary(geom = "point", fun = "mean", size = 2, aes(color = treatment)) +
   ggtitle(expression(paste("Native: ", italic(Dichanthelium), sep = ""))) +
-  coord_cartesian(ylim = c(2.5, 22)) +
+  coord_cartesian(ylim = c(0, 22)) +
   ylab(expression(atop(NA, atop(paste("Percentage ", italic(Microstegium), sep = ""), " leaves with lesions")))) +
+  scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal) +
   theme_def +
   theme(legend.position = "none",
         plot.title = element_text(size = 9.5, hjust = 1),
@@ -394,28 +401,37 @@ perc_plot_c <- ggplot(mvdatc, aes(x = density, y = mv_perc_infec)) +
         plot.margin = margin(5.5, 5.5, 5.5, -2))
 
 perc_plot_v <- ggplot(mvdatv, aes(x = density, y = mv_perc_infec)) +
-  geom_ribbon(data = mv_perc_sim_datv, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
-  geom_line(data = mv_perc_sim_datv, color = col_pal2[2]) +
-  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
-  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  geom_ribbon(data = mv_perc_sim_datv, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper, fill = treatment), alpha = 0.5, color = NA) +
+  geom_line(data = mv_perc_sim_datv, aes(color = treatment)) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, aes(color = treatment)) +
+  stat_summary(geom = "point", fun = "mean", size = 2, aes(color = treatment)) +
   ggtitle(expression(paste("Native: ", italic(Elymus), sep = ""))) +
-  coord_cartesian(ylim = c(2.5, 22)) +
+  coord_cartesian(ylim = c(0, 22)) +
+  scale_fill_manual(values = col_pal,
+                    labels = c("F" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")), "W" = "mock inoculation (control)")) +
+  scale_color_manual(values = col_pal,
+                     labels = c("F" = expression(paste(italic("B. gigantea"), " inoculation", sep = "")), "W" = "mock inoculation (control)")) +
   theme_def +
-  theme(plot.title = element_text(size = 9.5, hjust = 0.5))
+  theme(plot.title = element_text(size = 9.5, hjust = 0.5),
+        legend.position = "bottom", 
+        legend.direction = "horizontal")
 
 perc_plot_s <- ggplot(mvdats, aes(x = density, y = mv_perc_infec)) +
-  geom_ribbon(data = mv_perc_sim_dats, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper), alpha = 0.5, color = NA, fill = col_pal2[2]) +
-  geom_line(data = mv_perc_sim_dats, color = col_pal2[2]) +
-  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, color = col_pal2[2]) +
-  stat_summary(geom = "point", fun = "mean", size = 2, color = col_pal2[2]) +
+  geom_ribbon(data = mv_perc_sim_dats, aes(ymin = mv_perc_infec_lower, ymax = mv_perc_infec_upper, fill = treatment), alpha = 0.5, color = NA) +
+  geom_line(data = mv_perc_sim_dats, aes(color = treatment)) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1, aes(color = treatment)) +
+  stat_summary(geom = "point", fun = "mean", size = 2, aes(color = treatment)) +
   ggtitle(expression(paste("Native: ", italic(Eragrostis), sep = ""))) +
-  coord_cartesian(ylim = c(2.5, 22)) +
+  coord_cartesian(ylim = c(0, 22)) +
+  scale_fill_manual(values = col_pal) +
+  scale_color_manual(values = col_pal) +
   theme_def +
-  theme(plot.title = element_text(size = 9.5, hjust = 0.5))
+  theme(plot.title = element_text(size = 9.5, hjust = 0.5),
+        legend.position = "none")
 
 # combine plots
 perc_plot_comb <- plot_grid(perc_plot_c,
-                            perc_plot_v,
+                            perc_plot_v + theme(legend.position = "none"),
                             perc_plot_s,
                           nrow = 1,
                           labels = LETTERS[1:3],
@@ -424,11 +440,17 @@ perc_plot_comb <- plot_grid(perc_plot_c,
                           hjust = c(-2.5, 0, 0))
 
 # axes
-x_plot_perc <- x_plot_mv
+x_plot_perc <- textGrob(expression(paste(italic(Microstegium), " density", sep = "")), gp = gpar(fontsize = 10))
+
+# combine
+perc_plot_comb2 <- grid.arrange(arrangeGrob(perc_plot_comb, bottom = x_plot_perc))
+
+# legend
+leg_perc <- get_legend(perc_plot_v)
 
 # save plot
-tiff("./output/Fig2.tiff", width = 5.2, height = 2, units = "in", res = 300)
-grid.arrange(arrangeGrob(perc_plot_comb, bottom = x_plot_perc))
+tiff("./output/Fig2.tiff", width = 5.2, height = 2.5, units = "in", res = 300)
+grid.arrange(arrangeGrob(perc_plot_comb2, bottom = leg_perc, padding = unit(1, "line")))
 dev.off()
 
 
